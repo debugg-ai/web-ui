@@ -28,8 +28,6 @@ logger = logging.getLogger(__name__)
 
 
 # --- Helper Functions --- (Defined at module level)
-
-
 async def _initialize_llm(
         provider: Optional[str],
         model_name: Optional[str],
@@ -37,34 +35,38 @@ async def _initialize_llm(
         base_url: Optional[str],
         api_key: Optional[str],
         num_ctx: Optional[int] = None,
-) -> Optional[BaseChatModel]:
+) -> BaseChatModel:
     """Initializes the LLM based on settings. Returns None if provider/model is missing."""
+    model_llm = None
     if not provider or not model_name:
         logger.info("LLM Provider or Model Name not specified, LLM will be None.")
-        return None
-    try:
-        # Use your actual LLM provider logic here
-        logger.info(
-            f"Initializing LLM: Provider={provider}, Model={model_name}, Temp={temperature}"
+    else:
+        try:
+                # Use your actual LLM provider logic here
+            logger.info(
+                f"Initializing LLM: Provider={provider}, Model={model_name}, Temp={temperature}"
+            )
+            # Example using a placeholder function
+            llm = llm_provider.get_llm_model(
+                provider=provider,
+                model_name=model_name,
+                temperature=temperature,
+                base_url=base_url or None,
+                api_key=api_key or None,
+                # Add other relevant params like num_ctx for ollama
+                num_ctx=num_ctx if provider == "ollama" else None,
+            )
+            model_llm = llm
+        except Exception as e:
+            logger.error(f"Failed to initialize LLM: {e}", exc_info=True)
+            
+    if not model_llm:
+        model_llm = llm_provider.get_llm_model(
+            provider="openai",
+            model_name="gpt-4o-mini",
+            temperature=0.6,
         )
-        # Example using a placeholder function
-        llm = llm_provider.get_llm_model(
-            provider=provider,
-            model_name=model_name,
-            temperature=temperature,
-            base_url=base_url or None,
-            api_key=api_key or None,
-            # Add other relevant params like num_ctx for ollama
-            num_ctx=num_ctx if provider == "ollama" else None,
-        )
-        return llm
-    except Exception as e:
-        logger.error(f"Failed to initialize LLM: {e}", exc_info=True)
-        gr.Warning(
-            f"Failed to initialize LLM '{model_name}' for provider '{provider}'. Please check settings. Error: {e}"
-        )
-        return None
-
+    return model_llm
 
 def _get_config_value(
         webui_manager: WebuiManager,
